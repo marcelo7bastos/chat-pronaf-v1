@@ -1,4 +1,17 @@
 <<<<<<< HEAD
+
+#####
+# Ignora ambiente virtual e arquivos temporários
+.venv/
+*.pyc
+*.pyo
+*.pyd
+
+# Ignora arquivos do VSCode (se usar)
+.vscode/
+#####
+
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
