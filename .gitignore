@@ -9,6 +9,10 @@
 
 # Ignora arquivos do VSCode (se usar)
 .vscode/
+
+*.parquet
+**/*.parquet
+/data/*.parquet
 #####
 
 
