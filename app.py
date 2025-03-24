@@ -14,9 +14,29 @@ openai.api_key = st.secrets["openai_api_key"]
 
 
 # 🎯 CONFIGURAÇÕES INICIAIS DA PÁGINA
-st.set_page_config(page_title="Chatbot PRONAF", page_icon="🤖", layout="wide")
+st.set_page_config(
+    page_title="Chatbot PRONAF",
+    page_icon="🤖",
+    layout="wide"
+)
+
+# 🧠 Título e Introdução
 st.title("📊 Chatbot PRONAF")
-st.write("Interaja com os dados de crédito agrícola por estado, sexo e ano.")
+st.write("Interaja com os dados do Programa Nacional de Fortalecimento da Agricultura Familiar (PRONAF).")
+st.markdown("Aqui você pode consultar informações sobre crédito agrícola por **estado**, **sexo** e **ano**.")
+
+# ℹ️ Instruções
+st.markdown("##### ℹ️ Alguns exemplos:")
+st.markdown("""
+- 🧮 *"Qual o valor total de crédito para o estado SP?"*
+- 🗓️ *"Quantas operações foram realizadas no RS em 2024?"*
+- 👩‍🌾 *"Quantas agricultoras mulheres houve em MG em 2025?"*
+- 📊 *"Qual o total de crédito disponibilizado para homens e mulheres em Minas Gerais no ano de 2024?"*
+- 💰 *"Valor total de crédito concedido a agricultoras no Paraná em 2024?"*
+""")
+st.markdown("---")
+
+
 
 # 📦 CARREGAMENTO DO DATASET COM CACHE
 @st.cache_data
