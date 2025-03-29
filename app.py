@@ -41,7 +41,8 @@ st.markdown("---")
 # 📦 CARREGAMENTO DO DATASET COM CACHE
 @st.cache_data
 def carregar_dados():
-    df = pd.read_csv("data/pronaf.csv")
+    #df = pd.read_csv("data/pronaf.csv")
+    df = pd.read_parquet("data/pronaf.parquet")
     return df
 
 # 🔧 FUNÇÃO LOCAL PARA CONSULTAR O DATASET
@@ -140,3 +141,5 @@ for mensagem in st.session_state.mensagens:
     if mensagem["role"] in ["user", "assistant"]:
         with st.chat_message(mensagem["role"]):
             st.markdown(mensagem["content"])
+
+
