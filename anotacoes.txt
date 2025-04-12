@@ -1,0 +1,8 @@
+Como criar um ambiente virtual usando o python 3.13.2
+
+Como ativar o venv:
+#.\.venv\Scripts\Activate.ps1
+.\venv3.13\Scripts\Activate.ps1
+
+
+streamlit run app.py
