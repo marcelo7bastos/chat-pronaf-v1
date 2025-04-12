@@ -8,9 +8,78 @@ import json
 #from dotenv import load_dotenv
 import os
 
+# Importações para o vector store e recuperação
+# from langchain_community.vectorstores import Chroma 
+from langchain_huggingface import HuggingFaceEmbeddings
+from langchain_text_splitters import RecursiveCharacterTextSplitter
+from langchain_community.document_loaders import PyPDFLoader  # se necessário carregar novos documentos
+from langchain_chroma import Chroma
+
+# Importações para RAG e prompt
+from langchain import hub
+from langchain_openai import ChatOpenAI
+from langchain_core.runnables import RunnablePassthrough, RunnableLambda
+from langchain_core.output_parsers import StrOutputParser
+
+
 #load_dotenv()  # Carrega variáveis do .env
 
 openai.api_key = st.secrets["openai_api_key"]
+
+
+######### Código de carregamento do vector store, RAG e funções do RAG #########
+# 🗂️ CARREGAMENTO DO VETOR STORE
+# Configurar os embeddings com o modelo escolhido
+embedding_engine = HuggingFaceEmbeddings(model_name="sentence-transformers/all-mpnet-base-v2")
+
+# Carregar o vector store persistido
+try:
+    vector_db = Chroma(
+        persist_directory=r"data\data-rag\persist_directory", 
+        embedding_function=embedding_engine
+    )
+except Exception as e:
+    raise RuntimeError(f"Erro ao carregar o vector_db: {e}")
+
+# Verificar se o vector_db foi carregado corretamente
+if vector_db is None:
+    raise RuntimeError("O vector_db não foi carregado corretamente. Verifique o caminho e os dados.")
+
+# Definir o número de documentos a serem recuperados
+n_documentos = 3
+
+
+#### Função para formatar os documentos recuperados para o RAG
+def format_docs(documentos):
+    """
+    Concatena os conteúdos dos documentos em um único texto com separador de duas quebras de linha.
+    Adicionalmente, inclui um cabeçalho com metadados relevantes (por exemplo, número da página), se disponíveis.
+
+    Args:
+        documentos (list): Lista de objetos que possuem os atributos 'page_content' e, opcionalmente, 'metadata'.
+
+    Returns:
+        str: Texto concatenado dos conteúdos dos documentos que possuem conteúdo válido.
+    """
+    formatted_texts = []  # Lista para armazenar os textos formatados
+
+    for doc in documentos:
+        # Verifica se o objeto possui o atributo 'page_content'
+        if hasattr(doc, "page_content"):
+            content = doc.page_content.strip()  # Remove espaços extras do início e fim
+            # Se o conteúdo não estiver vazio
+            if content:
+                header = ""
+                # Se existirem metadados e, em particular, o número da página estiver disponível, insere o cabeçalho
+                if hasattr(doc, "metadata") and doc.metadata.get("page"):
+                    header = f"Página: {doc.metadata.get('page')}\n"
+                formatted_texts.append(f"{header}{content}")
+
+    # Junta os textos formatados usando duas quebras de linha como separador
+    return "\n\n".join(formatted_texts)
+##############
+
+
 
 
 # 🎯 CONFIGURAÇÕES INICIAIS DA PÁGINA
@@ -99,7 +168,52 @@ pergunta = st.chat_input("Digite sua pergunta sobre os dados do PRONAF...")
 # 🔁 ADICIONA A PERGUNTA À CONVERSA E PROCESSA
 if pergunta:
     st.session_state.mensagens.append({"role": "user", "content": pergunta})
+    
+    # ------------------------------------------------------------------
+    # Etapa 2: Recuperar o contexto via RAG
+    # ------------------------------------------------------------------
+    # Aqui usamos a função que recupera os documentos e os formata
+    formatted_context = (vector_db.as_retriever(k=n_documentos) | format_docs).invoke(pergunta)
 
+        # Exibir o contexto recuperado para verificação (para debug)
+    # st.markdown("### Contexto Recuperado via RAG:")
+    # st.text_area("Contexto", formatted_context, height=300)
+
+    # ------------------------------------------------------------------
+    # Etapa 3: Construir o Prompt Combinado
+    # ------------------------------------------------------------------
+    prompt_template = ( "Você é um assistente especializado em crédito rural, com ênfase nas operações destinadas à agricultura familiar, "
+                        "ou seja, nos dados do PRONAF.\n\n"
+                        "Os dados a seguir foram recuperados via RAG\n\n" 
+                        "Contexto Recuperado (obtido via RAG):\n"
+                        "-----------------------------------------------------------\n" 
+                        "{context}\n" 
+                        "-----------------------------------------------------------\n\n" 
+                        "Pergunta: {question}\n\n" 
+                        "Se o contexto não contiver informações suficientes para responder à pergunta, ou se a consulta exigir"
+                        "dados específicos de um estado (por exemplo, o código de um estado como 'SP', 'RS', etc.), " 
+                        "por favor, invoque a função 'consulta_pronaf_por_estado' para obter um resumo dos dados do PRONAF para o estado em questão. "
+                        "Os dados obtidos a partir da função 'consulta_pronaf_por_estado' foram extraídos da base de dados oficial disponibilizada pelo Banco Central do Brasil"
+                        "disponíveis em https://www.bcb.gov.br/estabilidadefinanceira/creditorural."
+                        "Com base nos dados oficiais acima e no contexto fornecido, responda utilizando linguagem simples, sendo informativo e proativo."
+                        "Caso mesmo após a consulta não haja dados suficientes para responder à pergunta, "
+                        "informe que não há dados suficientes para elaborar uma resposta"
+                         "e solicite, cordialmente, que o usuário aprimore a pergunta." )
+
+
+    combined_prompt = prompt_template.format(context=formatted_context, question=pergunta)
+    
+    # Para debug, você pode exibir o prompt combinado
+    # st.markdown("### Prompt Combinado para a LLM:")
+    # st.text_area("Prompt", combined_prompt, height=300)
+    
+    # Imprimi na tela >> Adiciona o prompt combinado à conversa (como uma mensagem do usuário)
+    #st.session_state.mensagens.append({"role": "user", "content": combined_prompt})
+
+
+    # ------------------------------------------------------------------
+    # Etapa 4: Enviar o prompt combinado para a LLM
+    # ------------------------------------------------------------------
     # 🔍 PRIMEIRA CHAMADA PARA VERIFICAR SE A LLM VAI USAR UMA TOOL
     resposta = openai.chat.completions.create(
         model="gpt-4o-mini",
@@ -119,11 +233,13 @@ if pergunta:
             argumentos = json.loads(call.function.arguments)
             resultado_funcao = consulta_pronaf_por_estado(**argumentos)
 
+
             st.session_state.mensagens.append({
                 "role": "tool",
                 "tool_call_id": call.id,
                 "content": resultado_funcao
             })
+
 
         # 🔁 SEGUNDA CHAMADA PARA OBTER A RESPOSTA FINAL
         resposta_final = openai.chat.completions.create(
