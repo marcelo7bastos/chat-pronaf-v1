@@ -13,9 +13,15 @@ except ModuleNotFoundError:
 # ────────────────────────────────────────────────────────────────────
 
 
-
-
 import streamlit as st
+
+# 🎯 CONFIGURAÇÕES INICIAIS DA PÁGINA - PRIMEIRO comando Streamlit
+st.set_page_config(
+    page_title="Chatbot PRONAF",
+    page_icon="🤖",
+    layout="wide"
+)
+
 import pandas as pd
 import openai
 import json
@@ -50,7 +56,18 @@ openai.api_key = st.secrets["openai_api_key"]
 ######### Código de carregamento do vector store, RAG e funções do RAG #########
 # 🗂️ CARREGAMENTO DO VETOR STORE
 # Configurar os embeddings com o modelo escolhido
-embedding_engine = HuggingFaceEmbeddings(model_name="sentence-transformers/all-mpnet-base-v2")
+# embedding_engine = HuggingFaceEmbeddings(model_name="sentence-transformers/all-mpnet-base-v2") # melhor modelo, mas mais pesado
+#embedding_engine = HuggingFaceEmbeddings(model_name="sentence-transformers/all-MiniLM-L6-v2") # modelo mais leve e rápido, mas menos preciso
+
+# Modelo encapsulado em função para facilitar o cache
+@st.cache_resource(show_spinner="Carregando embeddings…")
+def load_embeddings():
+    return HuggingFaceEmbeddings(
+        model_name="sentence-transformers/all-MiniLM-L6-v2"
+    )
+
+embedding_engine = load_embeddings()
+
 
 # Carregar o vector store persistido
 try:
@@ -102,12 +119,6 @@ def format_docs(documentos):
 
 
 
-# 🎯 CONFIGURAÇÕES INICIAIS DA PÁGINA
-st.set_page_config(
-    page_title="Chatbot PRONAF",
-    page_icon="🤖",
-    layout="wide"
-)
 
 # 🧠 Título e Introdução
 st.title("📊 Chatbot PRONAF")
