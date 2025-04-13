@@ -1,0 +1,2 @@
+# Define a versão do Python para o ambiente de deploy. Usando Python 3.13.2 para compatibilidade com o projeto.
+python-3.13.2
