@@ -6,3 +6,11 @@ Como ativar o venv:
 
 
 streamlit run app.py
+
+
+Perguntas
+o que é pronaf?
+quais os prgramas vinculados ao pronaf?
+Descreva o Pronaf B
+Quantas operações foram realizadas no RS em 2024?
+Qual é o valor das operações no RS entre 2015 e 2025?
