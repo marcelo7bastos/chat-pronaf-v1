@@ -1,3 +1,20 @@
+# ─── compatibilidade SQLite / Chroma ────────────────────────────────
+import sys, importlib, platform
+
+try:
+    if platform.system() != "Windows":          # Linux, macOS, Cloud…
+        import pysqlite3                        # wheel ≥ 0.5.3
+        sys.modules["sqlite3"] = sys.modules.pop("pysqlite3")
+        importlib.invalidate_caches()
+except ModuleNotFoundError:
+    # Estamos no Windows (ou o wheel não foi instalado). 
+    # Continuamos com o sqlite3 da stdlib, que já é ≥ 3.41 no Python 3.12.
+    pass
+# ────────────────────────────────────────────────────────────────────
+
+
+
+
 import streamlit as st
 import pandas as pd
 import openai
