@@ -123,7 +123,8 @@ def format_docs(documentos):
 # 🧠 Título e Introdução
 st.title("📊 Chatbot PRONAF")
 st.write("Interaja com os dados do Programa Nacional de Fortalecimento da Agricultura Familiar (PRONAF).")
-st.markdown("Aqui você pode consultar informações sobre crédito agrícola por **estado**, **sexo** e **ano**.")
+st.markdown("Aqui você pode consultar informações sobre o PRONAF e as linhas de crédito para o Agricultor Famliar" \
+            "e, também, sobre crédito agrícola por **estado**, **sexo** e **ano**.")
 
 # ℹ️ Instruções
 st.markdown("##### ℹ️ Alguns exemplos:")
