@@ -8,7 +8,7 @@ Novo ambiente:
 conda activate pronaf312
 
 
-streamlit run app.py
+streamlit run "0_🤖 Início.py"
 
 
 Perguntas
